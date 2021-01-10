@@ -5,7 +5,6 @@ from typing import Dict, List, Text, Union
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
     Update,
 )
@@ -26,9 +25,9 @@ END = ConversationHandler.END
 MENU_ACTION, ADD_PERSON, PERSONS_LIST, MARK_PERSON, STOPPING = map(
     chr, range(5)
 )
-CURRENT_OPERATION, INSERT, UPDATE = map(chr, range(5, 8))
-SELECTING_PERSON, RENAMING_PERSON = map(chr, range(8, 10))
-EDITING_PERSON_ID = chr(11)
+CURRENT_OPERATION, INSERT = map(chr, range(5, 7))
+RENAMING_PERSON = map(chr, range(7, 9))
+EDITING_PERSON_ID = chr(9)
 USER_DATA = chr(100)
 updater = Updater(token=telegram_token, use_context=True)
 dispatcher = updater.dispatcher
@@ -208,6 +207,19 @@ def main() -> None:
     # dispatcher.add_handler(unknown_handler)
     persons_conv = ConversationHandler(
         entry_points=[CallbackQueryHandler(rename_person, pattern="^p\d+$")],
+        states={
+            INSERT: [
+                MessageHandler(Filters.text & ~Filters.command, input_new_name)
+            ],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+    adding_mark = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(
+                rename_person, pattern="^" + str(ADDING_MARK) + "$"
+            )
+        ],
         states={
             INSERT: [
                 MessageHandler(Filters.text & ~Filters.command, input_new_name)
