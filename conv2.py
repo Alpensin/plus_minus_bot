@@ -52,7 +52,7 @@ def facts_to_str(user_data: Dict[str, str]) -> str:
 
 
 def start(update: Update, context: CallbackContext) -> int:
-    update.message.reply_text(
+    a = update.message.reply_text(
         "Hi! My name is Doctor Botter. I will hold a more complex conversation with you. "
         "Why don't you tell me something about yourself?",
         reply_markup=markup,
@@ -84,7 +84,7 @@ def received_information(update: Update, context: CallbackContext) -> int:
     user_data = context.user_data
     text = update.message.text
     category = user_data["choice"]
-    f[category] = text
+    user_data[category] = text
     del user_data["choice"]
 
     update.message.reply_text(
