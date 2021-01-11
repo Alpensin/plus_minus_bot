@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 # '''
 
 
-def insert_data(table, **kwargs):
+def insert_new_person(table, **kwargs):
     try:
         table_fields = tables[table]
     except KeyError as e:
@@ -49,15 +49,15 @@ def insert_data(table, **kwargs):
 
 
 def update_data(person_id, new_name):
-    with sqlite3.connect(db) as conn:
-        try:
+    try:
+        with sqlite3.connect(db) as conn:
             query = "update persons SET name = :new_name where id = :person_id"
             c = conn.cursor()
             c.execute(query, {"person_id": person_id, "new_name": new_name})
             return True
-        except Exception as e:
-            logger.exception(e)
-            return False
+    except Exception as e:
+        logger.exception(e)
+        return False
 
 
 def select_persons(tg_user):
@@ -66,6 +66,24 @@ def select_persons(tg_user):
         c = conn.cursor()
         c.execute(query, (tg_user,))
         return c.fetchall()
+
+
+def insert_new_mark(person_id, mark, comment):
+    try:
+        with sqlite3.connect(db) as conn:
+            query = (
+                "insert into  persons (person_id, mark, comment) "
+                "VALUES(:person_id, :mark, :comment)"
+            )
+            c = conn.cursor()
+            c.execute(
+                query,
+                {"person_id": person_id, "mark": mark, "comment": comment},
+            )
+            return True
+    except Exception as e:
+        logger.exception(e)
+        return False
 
 
 # insert_data("persons", **{"name": "Igor1", "tg_user": 12123122})
