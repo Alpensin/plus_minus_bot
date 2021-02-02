@@ -21,7 +21,8 @@ from telegram.ext import (
 )
 
 import global_variables
-import menu_addresses
+import menu_addresses as ma
+from control_interfaces import edit_person_keyboard, main_menu_keyboard
 from settings import tables, telegram_token
 from sqlite_handler import (
     insert_new_mark,
@@ -37,44 +38,22 @@ dispatcher = updater.dispatcher
 
 logging.basicConfig(
     format="%(asctime)s, %(levelname)s, %(name)s, %(message)s",
-    level=logging.DEBUG,
+    level=logging.WARNING,
     stream=sys.stdout,
 )
 logger = logging.getLogger(__name__)
 
-main_menu_buttons = [
-    [
-        InlineKeyboardButton(
-            text="Add Person", callback_data=menu_addresses.ADD_PERSON
-        ),
-        InlineKeyboardButton(
-            text="Persons list", callback_data=menu_addresses.PERSONS_LIST
-        ),
-    ],
-    [
-        InlineKeyboardButton(
-            text="User data",
-            callback_data=menu_addresses.USER_DATA,
-        )
-    ],
-]
 
-edit_person_buttons = [
-    [
-        InlineKeyboardButton(
-            text="Rename",
-            callback_data=menu_addresses.PREPARE_UPDATE_PERSON_NAME,
-        )
-    ],
-    [
-        InlineKeyboardButton(
-            text="Mark person",
-            callback_data=menu_addresses.PREPARE_INSERT_NEW_MARK,
-        )
-    ],
-]
-edit_person_menu = InlineKeyboardMarkup(edit_person_buttons)
-main_menu_keyboard = InlineKeyboardMarkup(main_menu_buttons)
+def stop(update: Update, context: CallbackContext) -> None:
+    """End Conversation by command."""
+    text = "Bye! Want to /start again?"
+    if update.message:
+        update.message.reply_text(text)
+    else:
+        update.callback_query.answer()
+        update.callback_query.edit_message_text(text=text)
+
+    return ma.END
 
 
 def create_persons_selection_inline_menu(persons):
@@ -104,21 +83,21 @@ def new_person(update: Update, context: CallbackContext) -> str:
     text = f"{user_data[global_variables.CURRENT_OPERATION]}:\n{name}"
     user_data[global_variables.CURRENT_OPERATION] = None
     update.message.reply_text(text=text, reply_markup=main_menu_keyboard)
-    return menu_addresses.MENU_ACTION
+    return ma.MENU_ACTION
 
 
-def input_new_name(update: Update, context: CallbackContext) -> int:
+def input_new_name(update: Update, context: CallbackContext):
     name = update.message.text
     user_data = context.user_data
-    person_id = user_data[menu_addresses.EDITING_PERSON_ID]
+    person_id = user_data[ma.EDITING_PERSON_ID]
     update_data(person_id, name)
     text = f"{user_data[global_variables.CURRENT_OPERATION]}:\n{name}"
     user_data[global_variables.CURRENT_OPERATION] = None
-    update.message.reply_text(text=text, reply_markup=edit_person_menu)
-    return menu_addresses.END
+    update.message.reply_text(text=text)
+    return stop(update, context)
 
 
-def input_new_mark(update: Update, context: CallbackContext) -> int:
+def input_new_mark(update: Update, context: CallbackContext):
     user_data = context.user_data
     user_data[global_variables.CURRENT_OPERATION] = "Adding mark"
     mark_text = update.message.text.strip()
@@ -128,19 +107,12 @@ def input_new_mark(update: Update, context: CallbackContext) -> int:
     except KeyError as e:
         logger.exception(e)
         raise
-    person_id = user_data[menu_addresses.EDITING_PERSON_ID]
+    person_id = user_data[ma.EDITING_PERSON_ID]
     insert_new_mark(person_id, mark, comment)
     text = f"{user_data[global_variables.CURRENT_OPERATION]}:\nDone"
-    update.message.reply_text(text=text, reply_markup=edit_person_menu)
+    update.message.reply_text(text=text)
     user_data[global_variables.CURRENT_OPERATION] = None
-    return menu_addresses.END
-
-
-def stop(update: Update, context: CallbackContext) -> None:
-    """End Conversation by command."""
-    update.message.reply_text("Okay, bye.")
-
-    return menu_addresses.END
+    return stop(update, context)
 
 
 def bot_help(update: Update, context: CallbackContext):
@@ -157,7 +129,7 @@ def start(update: Update, context: CallbackContext):
         "Please choose action",
         reply_markup=main_menu_keyboard,
     )
-    return menu_addresses.MENU_ACTION
+    return ma.MENU_ACTION
 
 
 def person_selection(update: Update, context: CallbackContext) -> str:
@@ -168,7 +140,7 @@ def person_selection(update: Update, context: CallbackContext) -> str:
     update.callback_query.edit_message_text(
         text="Choose Person", reply_markup=keyboard
     )
-    return menu_addresses.PERSON_SELECTION
+    return ma.PERSON_SELECTION
 
 
 def user_data(update: Update, context: CallbackContext) -> str:
@@ -177,7 +149,7 @@ def user_data(update: Update, context: CallbackContext) -> str:
     update.callback_query.edit_message_text(
         text=user_data, reply_markup=main_menu_keyboard
     )
-    return menu_addresses.MENU_ACTION
+    return ma.MENU_ACTION
 
 
 def add_person(update: Update, context: CallbackContext) -> str:
@@ -187,7 +159,7 @@ def add_person(update: Update, context: CallbackContext) -> str:
 
     update.callback_query.answer()
     update.callback_query.edit_message_text(text=text)
-    return menu_addresses.INSERT
+    return ma.INSERT
 
 
 def prepare_insert_new_mark(update: Update, context: CallbackContext) -> str:
@@ -202,7 +174,7 @@ def prepare_insert_new_mark(update: Update, context: CallbackContext) -> str:
     update.callback_query.edit_message_text(
         text=text, parse_mode=ParseMode.HTML
     )
-    return menu_addresses.INSERT_NEW_MARK
+    return ma.INSERT_NEW_MARK
 
 
 def prepare_update_person_name(
@@ -214,15 +186,13 @@ def prepare_update_person_name(
     update.callback_query.answer()
     update.callback_query.edit_message_text(text=text)
 
-    return menu_addresses.UPDATE_PERSON_NAME
+    return ma.UPDATE_PERSON_NAME
 
 
 def personal_menu(update: Update, context: CallbackContext) -> str:
     user_data = context.user_data
     try:
-        user_data[menu_addresses.EDITING_PERSON_ID] = int(
-            update.callback_query.data[1:]
-        )
+        user_data[ma.EDITING_PERSON_ID] = int(update.callback_query.data[1:])
         text = "Please choose action"
     except ValueError as e:
         logger.exception(e)
@@ -232,21 +202,19 @@ def personal_menu(update: Update, context: CallbackContext) -> str:
         text = "Something gone wrong"
     update.callback_query.answer()
     update.callback_query.edit_message_text(
-        text=text, reply_markup=edit_person_menu
+        text=text, reply_markup=edit_person_keyboard
     )
 
-    return menu_addresses.PERSONAL_MENU
+    return ma.PERSONAL_MENU
 
 
 def cancel(update: Update, context: CallbackContext) -> int:
-    user = update.message.from_user
-    logger.info("User %s canceled the conversation.", user.first_name)
     update.message.reply_text(
         "Bye! I hope we can talk again some day.",
         reply_markup=ReplyKeyboardRemove(),
     )
 
-    return ConversationHandler.END
+    return ma.END
 
 
 def unknown(update, context):
@@ -263,46 +231,54 @@ def main() -> None:
     persons_conv = ConversationHandler(
         entry_points=[CallbackQueryHandler(personal_menu, pattern="^p\d+$")],
         states={
-            menu_addresses.PERSONAL_MENU: [
+            ma.PERSONAL_MENU: [
                 CallbackQueryHandler(
                     prepare_update_person_name,
-                    pattern="^"
-                    + menu_addresses.PREPARE_UPDATE_PERSON_NAME
-                    + "$",
+                    pattern="^" + ma.PREPARE_UPDATE_PERSON_NAME + "$",
                 ),
                 CallbackQueryHandler(
                     prepare_insert_new_mark,
-                    pattern="^" + menu_addresses.PREPARE_INSERT_NEW_MARK + "$",
+                    pattern="^" + ma.PREPARE_INSERT_NEW_MARK + "$",
                 ),
             ],
-            menu_addresses.INSERT_NEW_MARK: [
+            ma.INSERT_NEW_MARK: [
                 MessageHandler(Filters.text & ~Filters.command, input_new_mark)
             ],
-            menu_addresses.UPDATE_PERSON_NAME: [
+            ma.UPDATE_PERSON_NAME: [
                 MessageHandler(Filters.text & ~Filters.command, input_new_name)
             ],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
+        map_to_parent={
+            ma.END: ma.END,
+        },
     )
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
         states={
-            menu_addresses.MENU_ACTION: [
+            ma.MENU_ACTION: [
                 CallbackQueryHandler(
-                    add_person, pattern="^" + menu_addresses.ADD_PERSON + "$"
+                    add_person, pattern="^" + ma.ADD_PERSON + "$"
                 ),
                 CallbackQueryHandler(
                     person_selection,
-                    pattern="^" + menu_addresses.PERSONS_LIST + "$",
+                    pattern="^" + ma.PERSONS_LIST + "$",
+                ),
+                CallbackQueryHandler(
+                    stop,
+                    pattern="^" + str(ma.END) + "$",
                 ),
             ],
-            menu_addresses.PERSON_SELECTION: [persons_conv],
-            menu_addresses.INSERT: [
+            ma.PERSON_SELECTION: [persons_conv],
+            ma.INSERT: [
                 MessageHandler(Filters.text & ~Filters.command, new_person)
             ],
-            menu_addresses.STOPPING: [CommandHandler("start", start)],
+            ma.STOPPING: [CommandHandler("start", start)],
         },
-        fallbacks=[CommandHandler("cancel", cancel)],
+        fallbacks=[
+            CommandHandler("cancel", cancel),
+            CommandHandler("stop", stop),
+        ],
     )
     dispatcher.add_handler(conv_handler)
     help_handler = CommandHandler("help", bot_help)

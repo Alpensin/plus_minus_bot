@@ -8,8 +8,7 @@ ADD_PERSON = chr(1)
 MARK_PERSON = chr(2)
 STOPPING = chr(3)
 PERSONS_LIST = chr(4)
-USER_DATA = chr(5)
-INSERT = chr(6)
+INSERT = chr(5)
 
 # status
 PERSON_SELECTION = chr(7)

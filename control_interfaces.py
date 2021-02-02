@@ -1,23 +1,32 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-buttons = [
+import menu_addresses as ma
+
+main_menu_buttons = [
     [
+        InlineKeyboardButton(text="Add Person", callback_data=ma.ADD_PERSON),
         InlineKeyboardButton(
-            text="Add mark to existing person",
-            callback_data=str(MARK_PERSON),
-        )
-    ],
-    [
-        InlineKeyboardButton(text="Add Person", callback_data=str(ADD_PERSON)),
-        InlineKeyboardButton(
-            text="Persons list", callback_data=str(PERSONS_LIST)
+            text="Persons list", callback_data=ma.PERSONS_LIST
         ),
     ],
     [
+        InlineKeyboardButton(text="Done", callback_data=ma.END),
+    ],
+]
+
+edit_person_buttons = [
+    [
         InlineKeyboardButton(
-            text="User data",
-            callback_data=str(USER_DATA),
+            text="Rename",
+            callback_data=ma.PREPARE_UPDATE_PERSON_NAME,
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            text="Mark person",
+            callback_data=ma.PREPARE_INSERT_NEW_MARK,
         )
     ],
 ]
-keyboard = InlineKeyboardMarkup(buttons)
+edit_person_keyboard = InlineKeyboardMarkup(edit_person_buttons)
+main_menu_keyboard = InlineKeyboardMarkup(main_menu_buttons)

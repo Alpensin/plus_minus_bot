@@ -6,7 +6,7 @@ from settings import db, tables
 
 logging.basicConfig(
     format="%(asctime)s, %(levelname)s, %(name)s, %(message)s",
-    level=logging.DEBUG,
+    level=logging.WARNING,
     stream=sys.stdout,
 )
 logger = logging.getLogger(__name__)
@@ -72,14 +72,16 @@ def insert_new_mark(person_id, mark, comment):
     try:
         with sqlite3.connect(db) as conn:
             query = (
-                "insert into  persons (person_id, mark, comment) "
-                "VALUES(:person_id, :mark, :comment)"
+                "insert into  marks (person_id, mark, comment) "
+                "VALUES (:person_id, :mark, :comment)"
             )
             c = conn.cursor()
             c.execute(
                 query,
                 {"person_id": person_id, "mark": mark, "comment": comment},
             )
+            logger.info("Я в инсерте")
+            logger.warning(f"{person_id} {mark} {comment}")
             return True
     except Exception as e:
         logger.exception(e)
