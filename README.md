@@ -9,3 +9,9 @@ Made for studying Python Telegram Bot library
 * Add new object for marking
 * Add new mark to it
 * Rename existing object
+
+#### TODO:
+Add reports
+Add inline commands
+Refactoring and optimization
+Tests
