@@ -11,7 +11,7 @@ Made for studying Python Telegram Bot library
 * Rename existing object
 
 #### TODO:
-Add reports
-Add inline commands
-Refactoring and optimization
-Tests
+* Add reports
+* Add inline commands
+* Refactoring and optimization
+* Tests
